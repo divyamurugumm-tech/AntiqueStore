@@ -3,7 +3,7 @@
  * Pure Vanilla JavaScript (ES6+)
  */
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'https://antiquestore.onrender.com/api';
 
 // Application State
 const state = {
