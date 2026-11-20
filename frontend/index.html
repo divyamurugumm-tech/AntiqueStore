@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antique Collectibles Store</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Global Toast Notification System -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner container">
+      <div class="brand">
+        <span class="brand-icon">🏺</span>
+        <div class="brand-text">
+          <h1>Antique Collectibles Store</h1>
+          <p class="tagline">Curated Historical Rarities & Appraisal System</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-indicator online" id="apiStatusBadge">
+          <span class="status-dot"></span> Backend: <span id="apiStatusText">Connected</span> (8080)
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="main-nav">
+    <div class="nav-container container">
+      <button class="nav-tab active" data-tab="itemsTab">
+        <span class="tab-icon">📦</span> Inventory Items
+      </button>
+      <button class="nav-tab" data-tab="erasTab">
+        <span class="tab-icon">🏛️</span> Historical Eras
+      </button>
+      <button class="nav-tab" data-tab="valuationsTab">
+        <span class="tab-icon">📜</span> Valuations & Appraisals
+      </button>
+      <button class="nav-tab" data-tab="salesTab">
+        <span class="tab-icon">💰</span> Sales & Revenue
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-content container">
+
+    <!-- ========================================== -->
+    <!-- SECTION 1: INVENTORY ITEMS                 -->
+    <!-- ========================================== -->
+    <section id="itemsTab" class="tab-pane active">
+      <div class="section-header">
+        <div>
+          <h2>Antique Inventory</h2>
+          <p class="section-desc">Browse, query, and manage rare artifacts synced with in-memory BST</p>
+        </div>
+        <button class="btn btn-primary" id="openAddItemBtn">
+          <span class="btn-icon">＋</span> Add Antique Item
+        </button>
+      </div>
+
+      <!-- Filter & Query Control Toolbar -->
+      <div class="card toolbar-card">
+        <div class="toolbar-grid">
+          <!-- Search by ID -->
+          <div class="toolbar-group">
+            <label for="searchIdInput">Search by Item ID (BST Lookup)</label>
+            <div class="input-with-action">
+              <input type="number" id="searchIdInput" placeholder="e.g. 1" min="1">
+              <button class="btn btn-secondary" id="searchIdBtn">Search</button>
+            </div>
+          </div>
+
+          <!-- Price Range Filter -->
+          <div class="toolbar-group range-group">
+            <label>Price Range Filter (BST Range)</label>
+            <div class="range-inputs">
+              <input type="number" id="minPriceInput" placeholder="Min (₹)" min="0" step="1000">
+              <span class="range-separator">—</span>
+              <input type="number" id="maxPriceInput" placeholder="Max (₹)" min="0" step="1000">
+              <button class="btn btn-secondary" id="applyRangeBtn">Filter</button>
+            </div>
+          </div>
+
+          <!-- Traversal & View Mode Toggles -->
+          <div class="toolbar-group view-modes">
+            <label>Traversal & View Options</label>
+            <div class="button-group">
+              <button class="btn btn-outline" id="loadAllItemsBtn" title="Load all items from MySQL database">
+                All Items (DB)
+              </button>
+              <button class="btn btn-outline" id="loadSortedItemsBtn" title="In-order BST traversal sorted by Item ID">
+                Sorted View (BST)
+              </button>
+              <button class="btn btn-ghost" id="resetFiltersBtn" title="Reset all filters">
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active View Status Banner -->
+        <div class="filter-status-bar" id="itemsStatusBar">
+          <span class="view-tag" id="currentViewBadge">All Items (MySQL)</span>
+          <span class="item-count" id="itemsCountBadge">Loading items...</span>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="card table-card">
+        <div class="table-responsive">
+          <table class="data-table" id="itemsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Historical Era</th>
+                <th>Condition</th>
+                <th>Price (₹)</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+              <tr>
+                <td colspan="8" class="text-center loading-cell">
+                  <div class="spinner"></div> Loading antique inventory...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 2: HISTORICAL ERAS                 -->
+    <!-- ========================================== -->
+    <section id="erasTab" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Historical Eras</h2>
+          <p class="section-desc">Manage chronologically defined periods for antique classification</p>
+        </div>
+      </div>
+
+      <div class="two-column-layout">
+        <!-- Add Era Form -->
+        <div class="card form-card">
+          <div class="card-header">
+            <h3>Add New Era</h3>
+          </div>
+          <form id="addEraForm" novalidate>
+            <div class="form-group">
+              <label for="eraNameInput">Era Name <span class="required">*</span></label>
+              <input type="text" id="eraNameInput" name="eraName" placeholder="e.g. Edwardian, Baroque" maxlength="50" required>
+              <span class="field-error" id="eraNameError"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startYearInput">Start Year <span class="required">*</span></label>
+                <input type="number" id="startYearInput" name="startYear" placeholder="e.g. 1901" required>
+                <span class="field-error" id="startYearError"></span>
+              </div>
+              <div class="form-group">
+                <label for="endYearInput">End Year <span class="required">*</span></label>
+                <input type="number" id="endYearInput" name="endYear" placeholder="e.g. 1914" required>
+                <span class="field-error" id="endYearError"></span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="saveEraBtn">
+                <span class="btn-icon">＋</span> Save Historical Era
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Eras List Table -->
+        <div class="card table-card">
+          <div class="card-header card-header-flex">
+            <h3>Registered Eras</h3>
+            <button class="btn btn-sm btn-outline" id="refreshErasBtn">↻ Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="erasTable">
+              <thead>
+                <tr>
+                  <th>Era ID</th>
+                  <th>Name</th>
+                  <th>Start Year</th>
+                  <th>End Year</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody id="erasTableBody">
+                <tr>
+                  <td colspan="5" class="text-center loading-cell">Loading historical eras...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 3: VALUATIONS                      -->
+    <!-- ========================================== -->
+    <section id="valuationsTab" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Valuations & Appraisals</h2>
+          <p class="section-desc">Review historical appraisal certificates and record official item valuations</p>
+        </div>
+      </div>
+
+      <div class="two-column-layout">
+        <!-- Add Valuation Form -->
+        <div class="card form-card">
+          <div class="card-header">
+            <h3>Record New Appraisal</h3>
+          </div>
+          <form id="addValuationForm" novalidate>
+            <div class="form-group">
+              <label for="valItemSelect">Target Antique Item <span class="required">*</span></label>
+              <select id="valItemSelect" name="itemId" required>
+                <option value="">Select an item...</option>
+              </select>
+              <span class="field-error" id="valItemIdError"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="valAppraisedValue">Appraised Value (₹) <span class="required">*</span></label>
+              <input type="number" id="valAppraisedValue" name="appraisedValue" min="0" step="0.01" placeholder="e.g. 195000.00" required>
+              <span class="field-error" id="valAppraisedValueError"></span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="valDateInput">Valuation Date <span class="required">*</span></label>
+                <input type="date" id="valDateInput" name="valDate" required>
+                <span class="field-error" id="valDateError"></span>
+              </div>
+              <div class="form-group">
+                <label for="valAppraiserInput">Certified Appraiser <span class="required">*</span></label>
+                <input type="text" id="valAppraiserInput" name="appraiser" maxlength="80" placeholder="e.g. H. Vance" required>
+                <span class="field-error" id="valAppraiserError"></span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="saveValuationBtn">
+                <span class="btn-icon">📜</span> Record Appraisal
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Valuation History Viewer -->
+        <div class="card table-card">
+          <div class="card-header card-header-flex">
+            <div>
+              <h3>Appraisal History</h3>
+              <p class="card-subtext" id="valuationHistoryTitle">Select an item to view past appraisals</p>
+            </div>
+            <div class="lookup-inline">
+              <input type="number" id="lookupValuationItemId" placeholder="Item ID" min="1" style="width: 100px;">
+              <button class="btn btn-sm btn-secondary" id="lookupValuationsBtn">Lookup</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="valuationsTable">
+              <thead>
+                <tr>
+                  <th>Valuation ID</th>
+                  <th>Appraised Value (₹)</th>
+                  <th>Valuation Date</th>
+                  <th>Certified Appraiser</th>
+                </tr>
+              </thead>
+              <tbody id="valuationsTableBody">
+                <tr>
+                  <td colspan="4" class="text-center empty-state">
+                    Please select an item or enter an Item ID above to inspect appraisals.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 4: SALES & REVENUE REPORT          -->
+    <!-- ========================================== -->
+    <section id="salesTab" class="tab-pane">
+      <div class="section-header">
+        <div>
+          <h2>Sales & Financial Report</h2>
+          <p class="section-desc">Live financial ledger with total store revenue and recorded transactions</p>
+        </div>
+        <button class="btn btn-success" id="openSellItemModalBtn">
+          <span class="btn-icon">💰</span> Sell Available Item
+        </button>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="card kpi-card">
+          <div class="kpi-icon">💎</div>
+          <div class="kpi-content">
+            <span class="kpi-title">Total Revenue</span>
+            <span class="kpi-value highlight" id="kpiTotalRevenue">₹0.00</span>
+          </div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-icon">📜</div>
+          <div class="kpi-content">
+            <span class="kpi-title">Total Antiques Sold</span>
+            <span class="kpi-value" id="kpiTotalCount">0</span>
+          </div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-icon">⚖️</div>
+          <div class="kpi-content">
+            <span class="kpi-title">Average Realized Price</span>
+            <span class="kpi-value" id="kpiAvgSalePrice">₹0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Table -->
+      <div class="card table-card">
+        <div class="card-header card-header-flex">
+          <h3>Completed Antique Transactions</h3>
+          <button class="btn btn-sm btn-outline" id="refreshSalesBtn">↻ Refresh Sales</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" id="salesTable">
+            <thead>
+              <tr>
+                <th>Sale ID</th>
+                <th>Item ID</th>
+                <th>Item Name</th>
+                <th>Buyer Name</th>
+                <th>Realized Price (₹)</th>
+                <th>Sale Date</th>
+              </tr>
+            </thead>
+            <tbody id="salesTableBody">
+              <tr>
+                <td colspan="6" class="text-center loading-cell">Loading sales ledger...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT ITEM                     -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="itemModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="itemModalTitle">Add New Antique Item</h3>
+        <button type="button" class="modal-close-btn" id="closeItemModalBtn">&times;</button>
+      </div>
+      <form id="itemForm" novalidate>
+        <input type="hidden" id="editItemId" value="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="itemNameInput">Item Name <span class="required">*</span></label>
+            <input type="text" id="itemNameInput" name="name" maxlength="100" placeholder="e.g. Baroque Gilded Mirror" required>
+            <span class="field-error" id="itemNameError"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="itemCategoryInput">Category <span class="required">*</span></label>
+              <input type="text" id="itemCategoryInput" name="category" maxlength="50" placeholder="e.g. Furniture, Silverware" required list="categorySuggestions">
+              <datalist id="categorySuggestions">
+                <option value="Instruments">
+                <option value="Furniture">
+                <option value="Timepieces">
+                <option value="Silverware">
+                <option value="Lighting">
+                <option value="Barware">
+                <option value="Armour">
+                <option value="Paintings">
+                <option value="Toys">
+                <option value="Ceramics">
+                <option value="Electronics">
+                <option value="Decor">
+              </datalist>
+              <span class="field-error" id="itemCategoryError"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="itemEraSelect">Historical Era <span class="required">*</span></label>
+              <select id="itemEraSelect" name="eraId" required>
+                <option value="">Select Era...</option>
+              </select>
+              <span class="field-error" id="itemEraError"></span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="itemConditionSelect">Condition <span class="required">*</span></label>
+              <select id="itemConditionSelect" name="condition" required>
+                <option value="">Select Condition...</option>
+                <option value="Mint">Mint</option>
+                <option value="Excellent">Excellent</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Restored">Restored</option>
+              </select>
+              <span class="field-error" id="itemConditionError"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="itemPriceInput">Price (₹) <span class="required">*</span></label>
+              <input type="number" id="itemPriceInput" name="price" min="0" step="0.01" placeholder="e.g. 125000.00" required>
+              <span class="field-error" id="itemPriceError"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemStatusSelect">Status</label>
+            <select id="itemStatusSelect" name="status">
+              <option value="AVAILABLE" selected>AVAILABLE (In Stock & BST Indexed)</option>
+              <option value="SOLD">SOLD</option>
+            </select>
+            <span class="field-error" id="itemStatusError"></span>
+          </div>
+
+          <div class="alert alert-danger" id="itemFormAlert" style="display: none;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelItemModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveItemBtn">Save Antique</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: SELL ITEM                           -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="sellModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Record Antique Sale</h3>
+        <button type="button" class="modal-close-btn" id="closeSellModalBtn">&times;</button>
+      </div>
+      <form id="sellForm" novalidate>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="sellItemSelect">Select Item to Sell <span class="required">*</span></label>
+            <select id="sellItemSelect" name="itemId" required>
+              <option value="">Choose an available antique...</option>
+            </select>
+            <span class="field-error" id="sellItemIdError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="sellBuyerName">Buyer Full Name <span class="required">*</span></label>
+            <input type="text" id="sellBuyerName" name="buyerName" maxlength="100" placeholder="e.g. Eleanor Vance" required>
+            <span class="field-error" id="sellBuyerNameError"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sellPriceInput">Realized Sale Price (₹) <span class="required">*</span></label>
+              <input type="number" id="sellPriceInput" name="salePrice" min="0" step="0.01" placeholder="e.g. 240000.00" required>
+              <span class="field-error" id="sellPriceError"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="sellDateInput">Sale Date <span class="required">*</span></label>
+              <input type="date" id="sellDateInput" name="saleDate" required>
+              <span class="field-error" id="sellDateError"></span>
+            </div>
+          </div>
+
+          <div class="alert alert-danger" id="sellFormAlert" style="display: none;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelSellModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-success" id="confirmSellBtn">Confirm & Finalize Sale</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DELETE CONFIRMATION                 -->
+  <!-- ========================================== -->
+  <div class="modal-backdrop" id="deleteModal">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3>Confirm Deletion</h3>
+        <button type="button" class="modal-close-btn" id="closeDeleteModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete item <strong id="deleteItemName"></strong> (ID: <span id="deleteItemId"></span>)?</p>
+        <p class="modal-warning-text">This will permanently remove the record from both MySQL and the in-memory BST.</p>
+        <div class="alert alert-danger" id="deleteModalAlert" style="display: none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="cancelDeleteModalBtn">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="container footer-content">
+      <p>&copy; Antique Collectibles Store System &bull; Java 17, Spring Boot, Custom BST & MySQL</p>
+      <p class="footer-note">CORS enabled for port 5500 &bull; REST API on port 8080</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
