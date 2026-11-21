@@ -3,7 +3,15 @@
 A full-stack antique inventory and appraisal management system featuring a high-performance Java 17 Spring Boot REST API with in-memory custom Binary Search Tree (BST), MySQL persistence, and a clean, responsive Vanilla HTML5/CSS3/JavaScript frontend.
 
 ---
+## 🌐 Live Demo
 
+- **Frontend:** https://splendorous-sundae-c91749.netlify.app
+- **Backend API:** https://antiquestore.onrender.com/api/items
+- **Hosting:** Netlify (frontend), Render + Docker (backend), Aiven MySQL (database)
+
+> Note: The backend runs on a free hosting plan and sleeps when idle, so the first request may take up to 50 seconds.
+
+---
 ## 🏛️ System Architecture
 
 ```
